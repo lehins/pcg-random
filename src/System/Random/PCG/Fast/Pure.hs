@@ -78,7 +78,7 @@ import Data.Primitive.Types
 import GHC.Generics
 import GHC.Word
 
-import System.Random
+import qualified System.Random as Random
 import System.Random.PCG.Class
 
 newtype FrozenGen = F Word64
@@ -253,7 +253,7 @@ instance (PrimMonad m, s ~ PrimState m) => Generator (Gen s) m where
     return $! f r
   {-# INLINE uniform1B #-}
 
-instance RandomGen FrozenGen where
+instance Random.RandomGen FrozenGen where
   next (F s) = (wordsTo64Bit w1 w2, F s'')
     where
       P s'  w1 = pair s
@@ -269,3 +269,9 @@ instance RandomGen FrozenGen where
       w4 = output s3 -- abandon old state
   {-# INLINE split #-}
 
+#if MIN_VERSION_random(1, 2, 0)
+  genWord32 (F s) = (w32, F s')
+    where
+      P s' w32 = pair s
+  {-# INLINE genWord32 #-}
+#endif
