@@ -78,7 +78,8 @@ import Foreign
 import GHC.Generics
 
 import System.Random.PCG.Class
-import System.Random
+import qualified System.Random as Random
+
 
 -- $setup
 -- >>> import System.Random.PCG.Pure
@@ -303,7 +304,7 @@ instance (PrimMonad m, s ~ PrimState m) => Generator (Gen s) m where
     return $! f r
   {-# INLINE uniform1B #-}
 
-instance RandomGen FrozenGen where
+instance Random.RandomGen FrozenGen where
   next (SetSeq s inc) = (wordsTo64Bit w1 w2, SetSeq s'' inc)
     where
       Pair s'  w1 = pair (SetSeq s inc)
@@ -319,3 +320,9 @@ instance RandomGen FrozenGen where
       Pair s4 w4 = pair (SetSeq s3 inc)
   {-# INLINE split #-}
 
+#if MIN_VERSION_random(1, 2, 0)
+  genWord32 g@(SetSeq _ inc) = (w32, SetSeq s' inc)
+    where
+      Pair s' w32 = pair g
+  {-# INLINE genWord32 #-}
+#endif

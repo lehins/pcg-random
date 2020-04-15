@@ -73,7 +73,8 @@ import Data.Data
 import Foreign
 import GHC.Generics
 import System.IO.Unsafe
-import System.Random
+import qualified System.Random as Random
+
 
 import System.Random.PCG.Class
 
@@ -222,7 +223,7 @@ instance (PrimMonad m, s ~ PrimState m) => Generator (Gen s) m where
   uniform1B f b (Gen p) = unsafePrimToPrim $ f <$> pcg32f_boundedrand_r p b
   {-# INLINE uniform1B #-}
 
-instance RandomGen FrozenGen where
+instance Random.RandomGen FrozenGen where
   next s = unsafeDupablePerformIO $ do
     p <- malloc
     poke p s
@@ -247,3 +248,12 @@ instance RandomGen FrozenGen where
     free p
     return (s1,s2)
 
+#if MIN_VERSION_random(1, 2, 0)
+  genWord32 s = unsafeDupablePerformIO $ -- FIXME: Allocations should not happen in dupable
+    alloca $ \p -> do
+      poke p s
+      w32 <- pcg32f_random_r p
+      s' <- peek p
+      return (w32, s')
+  {-# INLINE genWord32 #-}
+#endif
